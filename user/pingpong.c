@@ -15,10 +15,9 @@ main(int argc, char *argv[])
 
   int pid = fork();
   if (pid == 0){
-    read(p[1], buf, sizeof(buf));
-    close(p[1]);
+    read(p[0], buf, sizeof(buf));
     printf("%d: received ping\n", getpid());
-    write(p[0], str, 1);
+    write(p[1], str, 1);
     exit(0);
   } else if (pid < 0) {
     fprintf(2, "pingpong: failed to fork\n");
@@ -28,6 +27,7 @@ main(int argc, char *argv[])
   wait(0);
   read(p[0], buf, sizeof(buf));
   close(p[0]);
+  close(p[1]);
   printf("%d: received pong\n", getpid());
   exit(0);
 }
