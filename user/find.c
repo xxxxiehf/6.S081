@@ -18,7 +18,7 @@ fmtname(char *path)
   if(strlen(p) >= DIRSIZ)
     return p;
   memmove(buf, p, strlen(p));
-  memset(buf+strlen(p), ' ', DIRSIZ-strlen(p));
+  buf[strlen(p)] = 0;
   return buf;
 }
 
@@ -54,11 +54,15 @@ find(char *path, char *name)
     p = buf+strlen(buf);
     *p++ = '/';
     while(read(fd, &de, sizeof(de)) == sizeof(de)){
-      if(de.inum == 0 || strcmp(de.name, "..") == 0)
+      if(de.inum == 0 || strcmp(de.name, "..") == 0 || 
+        strcmp(de.name, ".") == 0)
         continue;
-      
+      memmove(p, de.name, DIRSIZ);
+      p[DIRSIZ] = 0;
+      find(buf, name);
     }
   }
+  close(fd);
 }
 
 int
@@ -69,5 +73,6 @@ main(int argc, char *argv[])
     exit(1);
   }
 
-  
+  find(argv[1], argv[2]);
+  exit(0);
 }
