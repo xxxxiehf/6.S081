@@ -8,5 +8,6 @@ Labs for MIT 6.S081, 2021 Fall([6.S081: Operating System Engineering](https://pd
 - [ ] Copy on-write
 - [ ] Multithreading
 - [ ] Network driver
+- [ ] Lock
 - [ ] File system
 - [ ] mmap
