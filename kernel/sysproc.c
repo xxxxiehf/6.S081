@@ -1,5 +1,6 @@
 #include "types.h"
 #include "riscv.h"
+#include "sysinfo.h"
 #include "defs.h"
 #include "date.h"
 #include "param.h"
@@ -82,4 +83,13 @@ uint64 sys_trace(void) {
     if (argint(0, &mask) < 0)
         return -1;
     return trace(mask);
+}
+
+uint64 sys_sysinfo(void) {
+    uint64 info;
+
+    if (argaddr(0, &info) < 0)
+        return -1;
+
+    return sysinfo((struct sysinfo *)info);
 }

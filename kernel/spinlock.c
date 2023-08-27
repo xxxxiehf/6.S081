@@ -6,6 +6,7 @@
 #include "spinlock.h"
 #include "riscv.h"
 #include "proc.h"
+#include "sysinfo.h"
 #include "defs.h"
 
 void
