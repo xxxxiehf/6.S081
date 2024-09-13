@@ -60,7 +60,7 @@ uint64 sys_sleep(void) {
 
 #ifdef LAB_PGTBL
 int sys_pgaccess(void) {
-    // lab pgtbl: your code here.
+     
     return 0;
 }
 #endif
