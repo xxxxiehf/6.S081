@@ -59,8 +59,38 @@ uint64 sys_sleep(void) {
 }
 
 #ifdef LAB_PGTBL
+// three arguments:
+// 1. staring va of the first user page to check
+// 2. number of pages to check
+// 3. a user address to a buffer to store the results into a bitmask
 int sys_pgaccess(void) {
-     
+    uint64 startaddr, bufferaddr;
+    int pages;
+    uint64 bitmask = 0;
+
+    if (argaddr(0, &startaddr) < 0 || argint(1, &pages) < 0 ||
+        argaddr(2, &bufferaddr) < 0)
+        return -1;
+    
+    // set an upper limit for the page that could be scanned
+    // not larger than 64 because we use uint64 to store the bitmask
+    if (pages > 64 || pages <= 0)
+        return -1;
+
+    for (int i = 0; i < pages; i++) {
+        uint64 va = startaddr + i * PGSIZE;
+        pte_t *pte = walk(myproc()->pagetable, va, 0);
+        if ((*pte & PTE_V) && (*pte & PTE_A)) {
+            printf("%dth accessed, va:%p, pte:%p\n", i, va, *pte);
+            bitmask |= (1L << i);
+            // reset the access bit
+            *pte = *pte & ~PTE_A;
+        }
+    }
+
+    if (copyout(myproc()->pagetable, bufferaddr, (char *)&bitmask, pages) < 0)
+        return -1;
+
     return 0;
 }
 #endif
