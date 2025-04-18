@@ -122,3 +122,15 @@ void printfinit(void) {
     initlock(&pr.lock, "pr");
     pr.locking = 1;
 }
+
+void backtrace(void) {
+    uint64 current_fp = r_fp();
+    printf("backtrace:\n");
+    while (PGROUNDUP(current_fp) - PGROUNDDOWN(current_fp) == PGSIZE) {
+        uint64 return_addr = current_fp - 8;
+        uint64 prev_fp = current_fp - 16;
+        printptr(*(uint64*)return_addr);
+        printf("\n");
+        current_fp = *(uint64*)prev_fp;
+    }
+}
