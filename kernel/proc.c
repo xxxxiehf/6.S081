@@ -131,6 +131,19 @@ found:
     p->context.ra = (uint64)forkret;
     p->context.sp = p->kstack + PGSIZE;
 
+    // the address of the user's alarm function might be 0
+    p->handler = (void *)-1;
+    // how many ticks have been passed since last handler call
+    p->ticks = -1;
+    // interval set by the user
+    p->interval = 0;
+
+    p->resumesz = 0;
+    // p->resumeepc = 0;
+    // p->resumesp = 0;
+    // p->resumera = 0;
+    p->resumetrapframe = 0;
+
     return p;
 }
 

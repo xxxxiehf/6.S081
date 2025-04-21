@@ -78,3 +78,42 @@ uint64 sys_uptime(void) {
     release(&tickslock);
     return xticks;
 }
+
+uint64 sys_sigalarm(void) {
+    int interval = 0;
+    // this is actually the address of the handler
+    uint64 handleraddr = -1;
+
+    if (argint(0, &interval) < 0)
+        return -1;
+    if (argaddr(1, &handleraddr) < 0)
+        return -1;
+
+    // reject invalid parameter
+    if (interval <= 0 || handleraddr < 0)
+        return -1;
+
+    myproc()->handler = (void *)handleraddr;
+    myproc()->interval = interval;
+    myproc()->ticks = 0;
+
+    return 0;
+}
+
+uint64 sys_sigreturn(void) {
+    struct proc *p = myproc();
+
+    // p->trapframe->epc = p->resumeepc;
+    // p->trapframe->sp = p->resumesp;
+    // p->trapframe->ra = p->resumera;
+    *p->trapframe = *p->resumetrapframe;
+    p->sz = p->resumesz;
+    // p->resumeepc = 0;
+    // p->resumesp = 0;
+    // p->resumera = 0;
+    p->resumesz = 0;
+    kfree((void *)p->resumetrapframe);
+    p->resumetrapframe = 0;
+
+    return 0;
+}
