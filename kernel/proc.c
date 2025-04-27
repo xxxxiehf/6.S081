@@ -138,10 +138,6 @@ found:
     // interval set by the user
     p->interval = 0;
 
-    p->resumesz = 0;
-    // p->resumeepc = 0;
-    // p->resumesp = 0;
-    // p->resumera = 0;
     p->resumetrapframe = 0;
 
     return p;

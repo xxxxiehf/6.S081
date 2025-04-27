@@ -102,16 +102,7 @@ uint64 sys_sigalarm(void) {
 
 uint64 sys_sigreturn(void) {
     struct proc *p = myproc();
-
-    // p->trapframe->epc = p->resumeepc;
-    // p->trapframe->sp = p->resumesp;
-    // p->trapframe->ra = p->resumera;
     *p->trapframe = *p->resumetrapframe;
-    p->sz = p->resumesz;
-    // p->resumeepc = 0;
-    // p->resumesp = 0;
-    // p->resumera = 0;
-    p->resumesz = 0;
     kfree((void *)p->resumetrapframe);
     p->resumetrapframe = 0;
 

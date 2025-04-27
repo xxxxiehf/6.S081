@@ -110,9 +110,5 @@ struct proc {
     int ticks;
     int interval;
 
-    uint64 resumesz;
-    // uint64 resumeepc;
-    // uint64 resumesp;
-    // uint64 resumera;
     struct trapframe *resumetrapframe;
 };

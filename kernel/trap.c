@@ -63,12 +63,8 @@ void usertrap(void) {
                     // like using `p->handler();`
 
                     // save
-                    // p->resumeepc = p->trapframe->epc;
-                    // p->resumera = p->trapframe->ra;
-                    // p->resumesp = p->trapframe->sp;
                     p->resumetrapframe = (struct trapframe *)kalloc();
                     *p->resumetrapframe = *p->trapframe;
-                    p->resumesz = p->sz;
 
                     // load
                     p->trapframe->epc = (uint64)p->handler;
