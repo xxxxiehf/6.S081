@@ -5,6 +5,7 @@ Labs for MIT 6.S081, 2021 Fall([6.S081: Operating System Engineering](https://pd
 - [x] Util
 - [x] System calls
 - [x] Page tables
+- [x] Trap
 - [ ] Copy on-write
 - [ ] Multithreading
 - [ ] Network driver
