@@ -18,7 +18,7 @@ struct spinlock pid_lock;
 extern void forkret(void);
 static void freeproc(struct proc *p);
 
-extern char trampoline[];  // trampoline.S
+extern char trampoline[]; // trampoline.S
 
 // helps ensure that wakeups of wait()ing
 // parents are not lost. helps obey the
@@ -34,7 +34,8 @@ void proc_mapstacks(pagetable_t kpgtbl) {
 
     for (p = proc; p < &proc[NPROC]; p++) {
         char *pa = kalloc();
-        if (pa == 0) panic("kalloc");
+        if (pa == 0)
+            panic("kalloc");
         uint64 va = KSTACK((int)(p - proc));
         kvmmap(kpgtbl, va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
     }
@@ -137,9 +138,11 @@ found:
 // including user pages.
 // p->lock must be held.
 static void freeproc(struct proc *p) {
-    if (p->trapframe) kfree((void *)p->trapframe);
+    if (p->trapframe)
+        kfree((void *)p->trapframe);
     p->trapframe = 0;
-    if (p->pagetable) proc_freepagetable(p->pagetable, p->sz);
+    if (p->pagetable)
+        proc_freepagetable(p->pagetable, p->sz);
     p->pagetable = 0;
     p->sz = 0;
     p->pid = 0;
@@ -158,7 +161,8 @@ pagetable_t proc_pagetable(struct proc *p) {
 
     // An empty page table.
     pagetable = uvmcreate();
-    if (pagetable == 0) return 0;
+    if (pagetable == 0)
+        return 0;
 
     // map the trampoline code (for system call return)
     // at the highest user virtual address.
@@ -211,8 +215,8 @@ void userinit(void) {
     p->sz = PGSIZE;
 
     // prepare for the very first "return" from kernel to user.
-    p->trapframe->epc = 0;      // user program counter
-    p->trapframe->sp = PGSIZE;  // user stack pointer
+    p->trapframe->epc = 0;     // user program counter
+    p->trapframe->sp = PGSIZE; // user stack pointer
 
     safestrcpy(p->name, "initcode", sizeof(p->name));
     p->cwd = namei("/");
@@ -268,7 +272,8 @@ int fork(void) {
 
     // increment reference counts on open file descriptors.
     for (i = 0; i < NOFILE; i++)
-        if (p->ofile[i]) np->ofile[i] = filedup(p->ofile[i]);
+        if (p->ofile[i])
+            np->ofile[i] = filedup(p->ofile[i]);
     np->cwd = idup(p->cwd);
 
     safestrcpy(np->name, p->name, sizeof(p->name));
@@ -307,7 +312,8 @@ void reparent(struct proc *p) {
 void exit(int status) {
     struct proc *p = myproc();
 
-    if (p == initproc) panic("init exiting");
+    if (p == initproc)
+        panic("init exiting");
 
     // Close all open files.
     for (int fd = 0; fd < NOFILE; fd++) {
@@ -387,7 +393,7 @@ int wait(uint64 addr) {
         }
 
         // Wait for a child to exit.
-        sleep(p, &wait_lock);  // DOC: wait-sleep
+        sleep(p, &wait_lock); // DOC: wait-sleep
     }
 }
 
@@ -437,10 +443,14 @@ void sched(void) {
     int intena;
     struct proc *p = myproc();
 
-    if (!holding(&p->lock)) panic("sched p->lock");
-    if (mycpu()->noff != 1) panic("sched locks");
-    if (p->state == RUNNING) panic("sched running");
-    if (intr_get()) panic("sched interruptible");
+    if (!holding(&p->lock))
+        panic("sched p->lock");
+    if (mycpu()->noff != 1)
+        panic("sched locks");
+    if (p->state == RUNNING)
+        panic("sched running");
+    if (intr_get())
+        panic("sched interruptible");
 
     intena = mycpu()->intena;
     swtch(&p->context, &mycpu()->context);
@@ -487,7 +497,7 @@ void sleep(void *chan, struct spinlock *lk) {
     // (wakeup locks p->lock),
     // so it's okay to release lk.
 
-    acquire(&p->lock);  // DOC: sleeplock1
+    acquire(&p->lock); // DOC: sleeplock1
     release(lk);
 
     // Go to sleep.
@@ -582,7 +592,8 @@ void procdump(void) {
 
     printf("\n");
     for (p = proc; p < &proc[NPROC]; p++) {
-        if (p->state == UNUSED) continue;
+        if (p->state == UNUSED)
+            continue;
         if (p->state >= 0 && p->state < NELEM(states) && states[p->state])
             state = states[p->state];
         else

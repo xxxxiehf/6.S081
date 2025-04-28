@@ -28,7 +28,8 @@ void trapinithart(void) { w_stvec((uint64)kernelvec); }
 void usertrap(void) {
     int which_dev = 0;
 
-    if ((r_sstatus() & SSTATUS_SPP) != 0) panic("usertrap: not from user mode");
+    if ((r_sstatus() & SSTATUS_SPP) != 0)
+        panic("usertrap: not from user mode");
 
     // send interrupts and exceptions to kerneltrap(),
     // since we're now in the kernel.
@@ -42,7 +43,8 @@ void usertrap(void) {
     if (r_scause() == 8) {
         // system call
 
-        if (p->killed) exit(-1);
+        if (p->killed)
+            exit(-1);
 
         // sepc points to the ecall instruction,
         // but we want to return to the next instruction.
@@ -61,10 +63,12 @@ void usertrap(void) {
         p->killed = 1;
     }
 
-    if (p->killed) exit(-1);
+    if (p->killed)
+        exit(-1);
 
     // give up the CPU if this is a timer interrupt.
-    if (which_dev == 2) yield();
+    if (which_dev == 2)
+        yield();
 
     usertrapret();
 }
@@ -85,18 +89,18 @@ void usertrapret(void) {
 
     // set up trapframe values that uservec will need when
     // the process next re-enters the kernel.
-    p->trapframe->kernel_satp = r_satp();          // kernel page table
-    p->trapframe->kernel_sp = p->kstack + PGSIZE;  // process's kernel stack
+    p->trapframe->kernel_satp = r_satp();         // kernel page table
+    p->trapframe->kernel_sp = p->kstack + PGSIZE; // process's kernel stack
     p->trapframe->kernel_trap = (uint64)usertrap;
-    p->trapframe->kernel_hartid = r_tp();  // hartid for cpuid()
+    p->trapframe->kernel_hartid = r_tp(); // hartid for cpuid()
 
     // set up the registers that trampoline.S's sret will use
     // to get to user space.
 
     // set S Previous Privilege mode to User.
     unsigned long x = r_sstatus();
-    x &= ~SSTATUS_SPP;  // clear SPP to 0 for user mode
-    x |= SSTATUS_SPIE;  // enable interrupts in user mode
+    x &= ~SSTATUS_SPP; // clear SPP to 0 for user mode
+    x |= SSTATUS_SPIE; // enable interrupts in user mode
     w_sstatus(x);
 
     // set S Exception Program Counter to the saved user pc.
@@ -122,7 +126,8 @@ void kerneltrap() {
 
     if ((sstatus & SSTATUS_SPP) == 0)
         panic("kerneltrap: not from supervisor mode");
-    if (intr_get() != 0) panic("kerneltrap: interrupts enabled");
+    if (intr_get() != 0)
+        panic("kerneltrap: interrupts enabled");
 
     if ((which_dev = devintr()) == 0) {
         printf("scause %p\n", scause);
@@ -131,7 +136,8 @@ void kerneltrap() {
     }
 
     // give up the CPU if this is a timer interrupt.
-    if (which_dev == 2 && myproc() != 0 && myproc()->state == RUNNING) yield();
+    if (which_dev == 2 && myproc() != 0 && myproc()->state == RUNNING)
+        yield();
 
     // the yield() may have caused some traps to occur,
     // so restore trap registers for use by kernelvec.S's sepc instruction.
@@ -171,7 +177,8 @@ int devintr() {
         // the PLIC allows each device to raise at most one
         // interrupt at a time; tell the PLIC the device is
         // now allowed to interrupt again.
-        if (irq) plic_complete(irq);
+        if (irq)
+            plic_complete(irq);
 
         return 1;
     } else if (scause == 0x8000000000000001L) {
