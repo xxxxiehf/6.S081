@@ -251,6 +251,8 @@ static inline void sfence_vma() {
 #define PTE_X (1L << 3)
 #define PTE_U (1L << 4) // 1 -> user can access
 
+#define PTE_COW (1L << 8)
+
 // shift a physical address to the right place for a PTE.
 #define PA2PTE(pa) ((((uint64)pa) >> 12) << 10)
 
@@ -271,3 +273,10 @@ static inline void sfence_vma() {
 
 typedef uint64 pte_t;
 typedef uint64 *pagetable_t; // 512 PTEs
+
+// physical address to index in the array
+#define PA2INDEX(pa) ((uint64)(pa - KERNBASE) / PGSIZE)
+
+// reference count for each physical page
+#define PAGE_COUNT 32768
+extern uint8 page_reference_count[PAGE_COUNT];
