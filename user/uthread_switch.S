@@ -37,4 +37,4 @@ thread_switch:
         ld s10, 96(a1)
         ld s11, 104(a1)
 
-	ret    /* return to ra */
+	    ret    /* return to ra */

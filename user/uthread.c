@@ -30,14 +30,14 @@ struct threadcontext {
 };
 
 struct thread {
-    char stack[STACK_SIZE];         /* the thread's stack */
-    int state;                      /* FREE, RUNNING, RUNNABLE */
-    struct threadcontext context;   // context for thread
+    char stack[STACK_SIZE];       /* the thread's stack */
+    int state;                    /* FREE, RUNNING, RUNNABLE */
+    struct threadcontext context; // context for thread
 };
 
 struct thread all_thread[MAX_THREAD];
 struct thread *current_thread;
-extern void thread_switch(struct threadcontext *, struct threadcontext *);
+extern void thread_switch(uint64, uint64);
 
 void thread_init(void) {
     // main() is thread 0, which will make the first invocation to
@@ -50,19 +50,16 @@ void thread_init(void) {
 }
 
 void thread_schedule(void) {
-    struct thread *t, *next_thread;
-
     /* Find another runnable thread. */
-    next_thread = 0;
-    t = current_thread + 1;
-    for (int i = 0; i < MAX_THREAD; i++) {
-        if (t >= all_thread + MAX_THREAD)
-            t = all_thread;
+    struct thread *next_thread = 0;
+    int current_index = current_thread - all_thread + 1;
+    for (int i = 0, index = (current_index + i) % MAX_THREAD; i < MAX_THREAD;
+         i++, index = (index + 1) % MAX_THREAD) {
+        struct thread *t = all_thread + index;
         if (t->state == RUNNABLE) {
             next_thread = t;
             break;
         }
-        t = t + 1;
     }
 
     if (next_thread == 0) {
@@ -71,10 +68,10 @@ void thread_schedule(void) {
     }
 
     if (current_thread != next_thread) {
+        struct thread *t = current_thread;
         next_thread->state = RUNNING;
-        t = current_thread;
         current_thread = next_thread;
-        thread_switch(&t->context, &next_thread->context);
+        thread_switch((uint64)&t->context, (uint64)&next_thread->context);
     } else
         next_thread = 0;
 }
@@ -88,7 +85,7 @@ void thread_create(void (*func)()) {
     }
     t->state = RUNNABLE;
     t->context.ra = (uint64)func;
-    t->context.sp = (uint64)t->stack;
+    t->context.sp = (uint64)(t->stack + STACK_SIZE);
 }
 
 void thread_yield(void) {
