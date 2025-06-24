@@ -16,6 +16,7 @@ struct entry {
 struct entry *table[NBUCKET];
 int keys[NKEYS];
 int nthread = 1;
+pthread_mutex_t insert_lock[NBUCKET];
 
 double now() {
     struct timeval tv;
@@ -45,7 +46,9 @@ static void put(int key, int value) {
         e->value = value;
     } else {
         // the new is new.
+        pthread_mutex_lock(&insert_lock[i]);
         insert(key, value, &table[i], table[i]);
+        pthread_mutex_unlock(&insert_lock[i]);
     }
 }
 
@@ -102,6 +105,10 @@ int main(int argc, char *argv[]) {
         keys[i] = random();
     }
 
+    for (int i = 0; i < NBUCKET; i++) {
+        pthread_mutex_init(&insert_lock[i], NULL);
+    }
+
     //
     // first the puts
     //
@@ -131,4 +138,6 @@ int main(int argc, char *argv[]) {
 
     printf("%d gets, %.3f seconds, %.0f gets/second\n", NKEYS * nthread,
            t1 - t0, (NKEYS * nthread) / (t1 - t0));
+
+    free(tha);
 }
