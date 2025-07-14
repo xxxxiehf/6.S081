@@ -99,6 +99,29 @@ int e1000_transmit(struct mbuf *m) {
     // a pointer so that it can be freed after sending.
     //
 
+    uint32 tx_ring_tail = regs[E1000_TDT];
+    // check if the tail has finished transmitting (i.e. whether the ring is
+    // overflowing)
+    if ((tx_ring[tx_ring_tail].status & E1000_TXD_STAT_DD) == 0) {
+        // release(&e1000_lock);
+        return -1;
+    }
+
+    // free the last mbuf that was transmitted from that descriptor
+    if (tx_mbufs[tx_ring_tail] != 0) {
+        mbuffree(tx_mbufs[tx_ring_tail]);
+    }
+
+    // fill in the descriptor
+    tx_ring[tx_ring_tail].addr = (uint64)m->head;
+    tx_ring[tx_ring_tail].length = m->len;
+    tx_ring[tx_ring_tail].cmd = E1000_TXD_CMD_RS | E1000_TXD_CMD_EOP;
+
+    // stash away a pointer to the mbuf for later freeing
+    tx_mbufs[tx_ring_tail] = m;
+
+    // update the ring position
+    regs[E1000_TDT] = (regs[E1000_TDT] + 1) % TX_RING_SIZE;
     return 0;
 }
 
@@ -109,6 +132,34 @@ static void e1000_recv(void) {
     // Check for packets that have arrived from the e1000
     // Create and deliver an mbuf for each packet (using net_rx()).
     //
+
+    // ask E1000 for the ring index
+    uint32 index = (regs[E1000_RDT] + 1) % RX_RING_SIZE;
+
+    // check if a new packet is available, if not just return
+    if ((rx_ring[index].status & E1000_RXD_STAT_DD) == 0) {
+        return;
+    }
+
+    for (int count = 0; count < RX_RING_SIZE;
+         count++, index = (index + 1) % RX_RING_SIZE) {
+        // printf("index: %d\n", index);
+        // update the length reported in the descriptor
+        rx_mbufs[index]->len = rx_ring[index].length;
+
+        // deliver the mbuf to the network stack
+        // in case of an ARP packet, it needs to send back an ARP packet
+        net_rx(rx_mbufs[index]);
+
+        // allocate a new mbuf to replace the one sent by `net_rx()`
+        rx_mbufs[index] = mbufalloc(0);
+        if (!rx_mbufs[index])
+            panic("e1000");
+        rx_ring[index].addr = (uint64)rx_mbufs[index]->head;
+    }
+
+    // update the register to be the index of the last ring descriptor processed
+    regs[E1000_RDT] = index;
 }
 
 void e1000_intr(void) {
