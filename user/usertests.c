@@ -224,7 +224,7 @@ void copyinstr3(char *s) {
 
 // See if the kernel refuses to read/write user memory that the
 // application doesn't have anymore, because it returned it.
-void rwsbrk() {
+void rwsbrk(char *s) {
     int fd, n;
 
     uint64 a = (uint64)sbrk(8192);
