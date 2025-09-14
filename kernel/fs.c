@@ -349,7 +349,7 @@ void iunlockput(struct inode *ip) {
 // If there is no such block, bmap allocates one.
 static uint bmap(struct inode *ip, uint bn) {
     uint addr, *a;
-    struct buf *bp;
+    struct buf *bp, *doubly;
 
     if (bn < NDIRECT) {
         if ((addr = ip->addrs[bn]) == 0)
@@ -358,6 +358,7 @@ static uint bmap(struct inode *ip, uint bn) {
     }
     bn -= NDIRECT;
 
+    // the singly indirect block
     if (bn < NINDIRECT) {
         // Load indirect block, allocating if necessary.
         if ((addr = ip->addrs[NDIRECT]) == 0)
@@ -371,6 +372,31 @@ static uint bmap(struct inode *ip, uint bn) {
         brelse(bp);
         return addr;
     }
+    bn -= NINDIRECT;
+
+    // the doubly indirect block
+    if (bn < NINDIRECT * NINDIRECT) {
+        // Load the first level indirect block
+        if ((addr = ip->addrs[NINDIRECT + 1]) == 0)
+            ip->addrs[NINDIRECT + 1] = addr = balloc(ip->dev);
+        bp = bread(ip->dev, addr);
+        // bp->data is address to 256 nodes
+        a = (uint *)bp->data;
+        // load the second level indirect block
+        if ((addr = a[bn / NINDIRECT]) == 0) {
+            a[bn / NINDIRECT] = addr = balloc(ip->dev);
+            log_write(bp);
+        }
+        doubly = bread(ip->dev, addr);
+        a = (uint *)doubly->data;
+        if ((addr = a[bn % NINDIRECT]) == 0) {
+            a[bn % NINDIRECT] = addr = balloc(ip->dev);
+            log_write(doubly);
+        }
+        brelse(doubly);
+        brelse(bp);
+        return addr;
+    }
 
     panic("bmap: out of range");
 }
@@ -378,9 +404,9 @@ static uint bmap(struct inode *ip, uint bn) {
 // Truncate inode (discard contents).
 // Caller must hold ip->lock.
 void itrunc(struct inode *ip) {
-    int i, j;
-    struct buf *bp;
-    uint *a;
+    int i, j, k;
+    struct buf *bp, *doubly;
+    uint *a, *b;
 
     for (i = 0; i < NDIRECT; i++) {
         if (ip->addrs[i]) {
@@ -399,6 +425,27 @@ void itrunc(struct inode *ip) {
         brelse(bp);
         bfree(ip->dev, ip->addrs[NDIRECT]);
         ip->addrs[NDIRECT] = 0;
+    }
+
+    if (ip->addrs[NDIRECT + 1]) {
+        bp = bread(ip->dev, ip->addrs[NDIRECT + 1]);
+        // this data point to 256 second level indirect nodes
+        a = (uint *)bp->data;
+        for (j = 0; j < NINDIRECT; j++) {
+            if (a[j]) {
+                doubly = bread(ip->dev, a[j]);
+                b = (uint *)doubly->data;
+                for (k = 0; k < NINDIRECT; k++) {
+                    if (b[k])
+                        bfree(ip->dev, b[k]);
+                }
+                brelse(doubly);
+                bfree(ip->dev, a[j]);
+            }
+        }
+        brelse(bp);
+        bfree(ip->dev, ip->addrs[NDIRECT + 1]);
+        ip->addrs[NDIRECT + 1] = 0;
     }
 
     ip->size = 0;
