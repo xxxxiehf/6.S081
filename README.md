@@ -10,5 +10,5 @@ Labs for MIT 6.S081, 2021 Fall([6.S081: Operating System Engineering](https://pd
 - [x] Multithreading
 - [x] Network driver
 - [x] Lock
-- [ ] File system
+- [x] File system
 - [ ] mmap
